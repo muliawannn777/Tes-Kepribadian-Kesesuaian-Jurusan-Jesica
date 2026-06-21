@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jesica's Cognitive Arc Navigation</title>
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --card-base: rgba(17, 24, 39, 0.7);
+            --border-glow: rgba(99, 102, 241, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+            top: calc(var(--mouse-y) - 300px);
+            left: calc(var(--mouse-x) - 300px);
+            z-index: 0;
+            pointer-events: none;
+            transition: top 0.15s ease-out, left 0.15s ease-out;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 700px;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .interactive-card {
+            background: var(--card-base);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 28px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .interactive-card:hover {
+            border-color: rgba(168, 85, 247, 0.25);
+            box-shadow: 0 30px 60px -15px rgba(99, 102, 241, 0.08);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            margin-bottom: 2.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 6.66%;
+            background: var(--accent-gradient);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .quiz-step {
+            display: none;
+        }
+
+        .quiz-step.active {
+            display: block;
+            animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            line-height: 1.55;
+            margin-bottom: 2rem;
+            color: #f1f5f9;
+        }
+
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .option-wrapper input[type="radio"] {
+            display: none;
+        }
+
+        .option-card {
+            display: block;
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            color: #cbd5e1;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-card:hover {
+            background: rgba(99, 102, 241, 0.05);
+            border-color: rgba(99, 102, 241, 0.35);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .option-wrapper input[type="radio"]:checked+.option-card {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: #a855f7;
+            color: #fff;
+            box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.3);
+        }
+
+        .action-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-btn {
+            padding: 0.8rem 1.6rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-next {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-next:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-prev {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-prev:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        /* Screen Hasil */
+        #result-display {
+            display: none;
+            animation: scaleUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .radar-badge {
+            display: inline-block;
+            padding: 0.5rem 1.2rem;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d8b4fe;
+            margin-bottom: 1.2rem;
+        }
+
+        .focus-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+        }
+
+        .percentage-bar {
+            font-size: 0.95rem;
+            color: #a855f7;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin: 2rem 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-left: 3px solid #a855f7;
+            padding-left: 0.5rem;
+        }
+
+        .narrative-box,
+        .market-insight-box {
+            background: rgba(255, 255, 255, 0.01);
+            border-left: 4px solid #6366f1;
+            padding: 1.5rem;
+            border-radius: 0 20px 20px 0;
+            font-size: 0.98rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+
+        .market-insight-box {
+            border-left-color: #a855f7;
+            background: rgba(168, 85, 247, 0.02);
+        }
+
+        /* Review History Section */
+        .review-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .review-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 1.2rem;
+        }
+
+        .review-q {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+
+        .review-a {
+            font-size: 0.88rem;
+            color: #a5b4fc;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(99, 102, 241, 0.4);
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #fff;
+            color: #090d16;
+            font-weight: 700;
+            font-size: 0.95rem;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-top: 2.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* PRINT / PDF GENERATION STYLING */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                display: block;
+                padding: 30px !important;
+            }
+
+            body::before,
+            .progress-container,
+            .action-area,
+            .download-btn,
+            header {
+                display: none !important;
+            }
+
+            .interactive-card {
+                border: none !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+
+            #result-display {
+                display: block !important;
+            }
+
+            .radar-badge {
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+                background: none !important;
+                padding: 4px 10px !important;
+            }
+
+            .focus-title {
+                color: #000000 !important;
+                font-size: 24pt !important;
+                font-weight: bold !important;
+                margin-top: 10px !important;
+            }
+
+            .percentage-bar {
+                color: #444444 !important;
+                font-size: 12pt !important;
+                border-bottom: 2px solid #000000 !important;
+                padding-bottom: 10px !important;
+            }
+
+            .section-subtitle {
+                color: #000000 !important;
+                font-size: 14pt !important;
+                margin-top: 25px !important;
+                border-bottom: 1px solid #ccc !important;
+                padding-bottom: 5px !important;
+            }
+
+            .narrative-box,
+            .market-insight-box {
+                border-left: 4px solid #000000 !important;
+                color: #222222 !important;
+                background: #f8fafc !important;
+                font-size: 11pt !important;
+                padding: 15px !important;
+                border-radius: 0 !important;
+            }
+
+            .review-card {
+                background: #ffffff !important;
+                border: 1px solid #ddd !important;
+                page-break-inside: avoid;
+                margin-bottom: 10px !important;
+            }
+
+            .review-q {
+                color: #111111 !important;
+            }
+
+            .review-a {
+                color: #444444 !important;
+                border-left: 2px solid #000000 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrapper">
+        <header>
+            <h1>Jesica's Cognitive Arc Navigation</h1>
+            <p>Eksplorasi Framework Berpikir & Keselarasan Rencana Studi Jangka Panjang</p>
+        </header>
+
+        <div class="interactive-card">
+            <div class="progress-container">
+                <div class="progress-bar" id="indicator"></div>
+            </div>
+
+            <form id="radar-core">
+                <div id="questions-injector"></div>
+
+                <div class="action-area" id="nav-controls">
+                    <button type="button" class="nav-btn btn-prev" id="back-action"
+                        style="visibility: hidden;">Kembali</button>
+                    <button type="button" class="nav-btn btn-next" id="forward-action">Selanjutnya</button>
+                </div>
+            </form>
+
+            <!-- Screen Output Hasil Akhir -->
+            <div id="result-display">
+                <span class="radar-badge">Rekomendasi Studi Eksklusif: Jesica</span>
+                <div class="focus-title" id="output-title">Menghitung Kecocokan Komparatif...</div>
+                <div class="percentage-bar" id="output-ratio"></div>
+
+                <div class="section-subtitle">
+                    <span>Kenapa Jurusan Ini Sangat Cocok Untukmu?</span>
+                </div>
+                <div class="narrative-box" id="output-text"></div>
+
+                <div class="section-subtitle">
+                    <span>Bagaimana Realita Dunia Kerja 3-5 Tahun ke Depan?</span>
+                </div>
+                <div class="market-insight-box" id="output-market"></div>
+
+                <div class="section-subtitle">
+                    <span>Rangkuman Pilihanmu (Bahan Pertimbangan Kembali)</span>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem; padding-left: 0.5rem;">
+                    Jesica, berikut adalah daftar pertanyaan dan respon yang telah kamu pilih sebelumnya. Kamu bisa
+                    membaca ulang poin-poin di bawah ini untuk merenungkan kembali apakah cara berpikir ini sudah
+                    benar-benar merepresentasikan kenyamanan dirimu:
+                </p>
+                <div class="review-container" id="output-review"></div>
+
+                <button type="button" class="download-btn" onclick="window.print()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Unduh Hasil & Simpan Rencana Studi (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 15 Psychometric Questions Dataset
+        const dataset = [
+            {
+                q: "1. Saat Jesica melihat infografis data atau visualisasi yang rumit, apa elemen pertama yang secara spontan menarik fokus perhatianmu?",
+                a: "Akurasi detail kecil, konsistensi struktur bagan, atau adanya anomali angka yang terselip.",
+                b: "Alur narasi besar di baliknya, kombinasi estetika visual, serta pesan emosional yang ingin disampaikan.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "2. Ketika kamu sedang bermain game taktik misteri atau menyelesaikan teka-teki logika, peran mana yang paling nyaman kamu mainkan?",
+                a: "Pengumpul fakta empiris yang memeriksa ulang validitas bukti dan memastikan aturan dasar tidak dilanggar.",
+                b: "Penghubung pola acak yang membaca intuisi motivasi pelaku serta memprediksi pergerakan makro.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "3. Bagaimana respon alamiah Jesica ketika sebuah aplikasi yang krusial bagi keseharianmu merombak total seluruh desain interface-nya?",
+                a: "Merasa sedikit tidak nyaman karena keteraturan fungsi yang sudah efisien harus beradaptasi ulang.",
+                b: "Merasa penasaran dan antusias untuk mengeksplorasi penempatan fungsi baru secara intuitif.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "4. Seandainya kamu memutuskan untuk mencoba resep kuliner baru yang cukup kompleks di akhir pekan, bagaimana cara kamu memprosesnya?",
+                a: "Mengikuti takaran gramasi secara presisi menggunakan timbangan digital sesuai petunjuk baku.",
+                b: "Membaca garis besarnya saja, kemudian berimprovisasi dengan modifikasi rasa berdasarkan insting.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "5. Saat kamu mengamati sebuah model bisnis baru yang sedang berkembang pesat di internet, pertanyaan apa yang paling pertama muncul di benakmu?",
+                a: "Bagaimana struktur biaya operasional mereka bekerja, kepatuhan regulasi, dan kestabilan jangka panjangnya?",
+                b: "Bagaimana cara mereka memikat perhatian audiens, membangun brand, dan melipatgandakan pertumbuhan pasar?",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "6. Bagaimana metode pengelolaan file, dokumen kerja, atau direktori ruang penyimpanan di gadget pribadi kamu?",
+                a: "Tersusun rapi di dalam sub-folder spesifik yang bertingkat dan dikategorikan secara runut.",
+                b: "Cenderung dikelompokkan secara garis besar saja karena lebih mengandalkan fitur pencarian instan.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "7. Dalam sebuah proses pemecahan masalah bersama tim, di situasi mana Jesica merasa kontribusi pemikiranmu paling optimal?",
+                a: "Ketika berhasil mendeteksi celah kekeliruan fatal atau meluruskan miskalkulasi data yang diabaikan orang lain.",
+                b: "Ketika berhasil melontarkan ide alternatif yang segar di saat diskusi kelompok mengalami jalan buntu.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "8. Jika diminta memproyeksikan lingkungan ekosistem kerja jangka panjang yang paling selaras untuk kesehatan jiwamu:",
+                a: "Lingkungan dengan regulasi yang teratur, kepastian fungsional yang stabil, serta menghargai keahlian mendalam.",
+                b: "Lingkungan dinamis yang adaptif terhadap tren baru, fleksibel, serta menuntut kreativitas konseptual.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "9. Saat kamu dituntut mempelajari sebuah software baru yang rumit demi menyelesaikan tugas, apa langkah pertamamu?",
+                a: "Mencari petunjuk panduan penggunaan resmi (*documentation*) atau tutorial runut langkah demi langkah.",
+                b: "Langsung membukanya dan melakukan metode *trial-and-error* secara mandiri untuk memahami polanya.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "10. Apabila sebuah rencana proyek yang matang mendadak tertunda karena faktor eksternal yang tidak terduga, apa reaksi pertamamu?",
+                a: "Melakukan audit internal untuk menghitung dampak kerugian struktur rencana awal secara kalkulatif.",
+                b: "Mencari opsi jalur alternatif darurat untuk mengalihkan sumber daya demi menjaga kelangsungan proyek.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "11. Ketika Jesica membaca artikel, berita, atau buku digital, topik mana yang paling sering membuatmu bertahan membaca lama?",
+                a: "Analisis mendalam mengenai pembongkaran kasus, metodifikasi riset ilmiah, atau fakta sejarah riil.",
+                b: "Kisah perjalanan hidup tokoh inspiratif, strategi ekspansi inovasi global, atau prediksi tren masa depan.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "12. Bayangkan kamu merencanakan perjalanan liburan jarak jauh yang cukup menantang, tipe perencanaan seperti apa yang kamu siapkan?",
+                a: "Membuat jadwal (*itinerary*) detail jam per jam lengkap dengan alokasi anggaran yang ketat agar terkontrol.",
+                b: "Hanya memesan akomodasi utama, sementara agenda aktivitas harian diputuskan secara spontan di lokasi.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "13. Jika suatu hari kamu mendapatkan surplus dana tak terduga, instrumen tata kelola mana yang paling menarik perhatianmu?",
+                a: "Mengalokasikannya ke instrumen proteksi jangka panjang atau tabungan berjangka yang tingkat keamanannya tinggi.",
+                b: "Memanfaatkannya sebagai modal pengembangan ide baru atau proyek eksperimental yang dinamis.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "14. Bagaimana cara Jesica menilai kualitas kinerja seseorang di dalam kelompok kerja atau organisasi?",
+                a: "Secara objektif mengacu pada parameter standar kontribusi riil yang terukur dan bukti pencapaian tugas.",
+                b: "Melihat dari aspek kapasitas adaptasi, antusiasme internal, serta cara dia berinteraksi secara interpersonal.",
+                valA: "A", valB: "M"
+            },
+            {
+                q: "15. Saat menguraikan sebuah peristiwa sejarah besar yang rumit, faktor penggerak mana yang paling menarik untuk kamu pelajari?",
+                a: "Sistem hukum yang berlaku pada era tersebut, rantai pasokan logistik, dan dinamika struktur ekonomi wilayah.",
+                b: "Karakteristik gaya kepemimpinan tokoh utama, taktik diplomasi, serta gerakan sosial yang dimobilisasi.",
+                valA: "A", valB: "M"
+            }
+        ];
+
+        // Inject questions programmatically
+        const injector = document.getElementById('questions-injector');
+        dataset.forEach((item, index) => {
+            const stepNum = index + 1;
+            const activeClass = stepNum === 1 ? 'active' : '';
+            const html = `
+            <div class="quiz-step ${activeClass}" data-index="${stepNum}">
+                <div class="question-text">${item.q}</div>
+                <div class="options-group">
+                    <label class="option-wrapper">
+                        <input type="radio" name="q${stepNum}" value="${item.valA}" data-text="${item.a}" required>
+                        <span class="option-card">${item.a}</span>
+                    </label>
+                    <label class="option-wrapper">
+                        <input type="radio" name="q${stepNum}" value="${item.valB}" data-text="${item.b}">
+                        <span class="option-card">${item.b}</span>
+                    </label>
+                </div>
+            </div>
+        `;
+            injector.insertAdjacentHTML('beforeend', html);
+        });
+
+        // Mouse Light Follower Effect
+        document.addEventListener('mousemove', (e) => {
+            const xPercent = (e.clientX / window.innerWidth) * 100;
+            const yPercent = (e.clientY / window.innerHeight) * 100;
+            document.documentElement.style.setProperty('--mouse-x', `${xPercent}%`);
+            document.documentElement.style.setProperty('--mouse-y', `${yPercent}%`);
+        });
+
+        const stepsCount = dataset.length;
+        let activeStep = 1;
+
+        const forwardBtn = document.getElementById('forward-action');
+        const backBtn = document.getElementById('back-action');
+        const indicatorBar = document.getElementById('indicator');
+        const coreForm = document.getElementById('radar-core');
+        const displayResult = document.getElementById('result-display');
+        const navigationControls = document.getElementById('nav-controls');
+
+        function syncUI() {
+            const scale = (activeStep / stepsCount) * 100;
+            indicatorBar.style.width = `${scale}%`;
+        }
+
+        forwardBtn.addEventListener('click', () => {
+            const block = document.querySelector(`.quiz-step[data-index="${activeStep}"]`);
+            const selectCheck = block.querySelector('input[type="radio"]:checked');
+
+            if (!selectCheck) {
+                alert('Silakan tentukan salah satu pilihan respons untuk melanjutkan, Jesica.');
+                return;
+            }
+
+            if (activeStep < stepsCount) {
+                block.classList.remove('active');
+                activeStep++;
+                document.querySelector(`.quiz-step[data-index="${activeStep}"]`).classList.add('active');
+
+                backBtn.style.visibility = 'visible';
+                if (activeStep === stepsCount) {
+                    forwardBtn.innerText = 'Rangkum Analisis';
+                }
+                syncUI();
+            } else {
+                renderDiagnostic();
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            if (activeStep > 1) {
+                document.querySelector(`.quiz-step[data-index="${activeStep}"]`).classList.remove('active');
+                activeStep--;
+                document.querySelector(`.quiz-step[data-index="${activeStep}"]`).classList.add('active');
+
+                forwardBtn.innerText = 'Selanjutnya';
+                if (activeStep === 1) {
+                    backBtn.style.visibility = 'hidden';
+                }
+                syncUI();
+            }
+        });
+
+        function renderDiagnostic() {
+            let countA = 0;
+            let countM = 0;
+            let reviewHTML = '';
+
+            for (let i = 1; i <= stepsCount; i++) {
+                const checkedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                const val = checkedRadio.value;
+                const chosenText = checkedRadio.getAttribute('data-text');
+
+                if (val === 'A') countA++;
+                if (val === 'M') countM++;
+
+                reviewHTML += `
+                <div class="review-card">
+                    <div class="review-q">${dataset[i - 1].q}</div>
+                    <div class="review-a">Pilihan Jesica: "${chosenText}"</div>
+                </div>
+            `;
+            }
+
+            coreForm.style.display = 'none';
+            navigationControls.style.display = 'none';
+            indicatorBar.parentElement.style.display = 'none';
+            displayResult.style.display = 'block';
+
+            const headTitle = document.getElementById('output-title');
+            const ratioText = document.getElementById('output-ratio');
+            const coreText = document.getElementById('output-text');
+            const marketText = document.getElementById('output-market');
+            const reviewContainer = document.getElementById('output-review');
+
+            reviewContainer.innerHTML = reviewHTML;
+
+            if (countM > countA) {
+                const pct = ((countM / stepsCount) * 100).toFixed(0);
+                headTitle.innerText = "Rekomendasi Utama: Jurusan S1 Manajemen";
+                ratioText.innerText = `KECENDERUNGAN GAYA BERPIKIR: ${pct}% Dinamis & Konseptual`;
+
+                coreText.innerHTML = `Jesica, dari hasil jawabanmu, kamu adalah tipe orang yang sangat nyaman melihat gambaran besar dari suatu hal, adaptif terhadap perubahan, dan memiliki intuisi kreatif yang kuat. Kamu kurang menyukai aturan kaku atau hitungan detail yang monoton. <br><br>
+            Di <strong>Jurusan S1 Manajemen</strong>, potensi alamiahmu ini akan berkembang sangat pesat. Kamu tidak akan dipaksa menghafal rumus angka mati, melainkan belajar tentang bagaimana mengelola sebuah bisnis, membaca pergeseran tren pasar, memanfaatkan platform digital, serta menyusun strategi promosi kreatif agar sebuah usaha bisa berkembang besar. Ini adalah ruang gerak yang paling pas untuk kebebasan berpikirmu.<br><br>
+            <strong>Kalimat Penyemangat untuk Jesica:</strong><br>
+            Masa depan industri modern sangat membutuhkan orang-orang yang bisa berpikir fleksibel dan adaptif seperti kamu. Jangan pernah ragu dengan ide-ide kreatifmu. Melalui jalur S1 Manajemen, kamu bisa mengasah bakat alamiahmu itu menjadi keahlian strategis yang sangat bernilai tinggi. Percayalah pada potensimu, kamu punya modal yang sangat kuat untuk sukses!`;
+
+                marketText.innerHTML = `* <strong>Kebutuhan Riil Lapangan (Riset World Economic Forum):</strong> Dalam laporan tren dunia kerja terbaru, keahlian dalam menyusun strategi bisnis (*Strategic Thinking*) dan kepemimpinan pasar menempati posisi 3 besar yang paling dicari perusahaan.<br>
+            * <strong>Peluang Karier 3-5 Tahun ke Depan:</strong> Riset dari lembaga global <em>McKinsey & Company</em> mencatat adanya lonjakan permintaan hingga 28% untuk posisi pengembang strategi bisnis digital, perancang merek (*Brand Specialist*), dan pengelola operasional produk di pasar Asia Tenggara karena masifnya digitalisasi bisnis korporasi.`;
+            } else {
+                const pct = ((countA / stepsCount) * 100).toFixed(0);
+                headTitle.innerText = "Rekomendasi Utama: Jurusan S1 Akuntansi";
+                ratioText.innerText = `KECENDERUNGAN GAYA BERPIKIR: ${pct}% Terstruktur & Presisi`;
+
+                coreText.innerHTML = `Jesica, dari hasil jawabanmu, kamu memiliki keunggulan besar dalam berpikir runtut, logis, rapi, dan sangat menghargai ketelitian. Kamu merasa jauh lebih aman dan percaya diri ketika bekerja dengan sistem yang memiliki aturan, struktur, serta standar kepastian yang jelas.<br><br>
+            Di <strong>Jurusan S1 Akuntansi</strong>, bakat ketelitianmu ini akan menjadi aset yang sangat mahal. Kamu tidak sekadar belajar matematika dasar, melainkan dilatih menjadi "jantung" dari sebuah perusahaan. Kamu akan belajar mengelola keuangan secara profesional, memeriksa keaslian data bisnis (*auditing*), serta menyusun perencanaan pajak yang efisien dan aman bagi korporasi besar.<br><br>
+            <strong>Kalimat Penyemangat untuk Jesica:</strong><br>
+            Kemampuan untuk fokus pada detail dan menjaga keteraturan adalah sebuah kekuatan langka yang tidak dimiliki semua orang. Di era serba cepat ini, setiap perusahaan besar dan startup raksasa sangat bergantung pada orang-orang teliti seperti kamu untuk menjaga keamanan bisnis mereka. Jurusan S1 Akuntansi akan memberikanmu perlindungan karier yang sangat kuat dan keahlian spesifik yang selalu dicari sepanjang masa. Langkahmu sudah sangat tepat, jalani dengan penuh keyakinan!`;
+
+                marketText.innerHTML = `* <strong>Kebutuhan Riil Lapangan (Riset Gartner):</strong> Analisis data industri menunjukkan bahwa meskipun teknologi pencatatan otomatis berkembang, kebutuhan perusahaan akan tenaga ahli manusia yang mampu menganalisis risiko sistem keuangan, kepatuhan hukum, dan konsultan pajak tetap naik sebesar 24%.<br>
+            * <strong>Ketahanan Profesi 3-5 Tahun ke Depan:</strong> Laporan pasar kerja menunjukkan bidang keuangan dan akuntansi taktis memiliki tingkat ketahanan krisis tertinggi (*crisis resilience*), karena setiap korporasi diwajibkan secara hukum untuk memiliki kendali laporan keuangan yang legalitasnya tidak bisa digantikan oleh sistem komputer atau AI biasa.`;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
